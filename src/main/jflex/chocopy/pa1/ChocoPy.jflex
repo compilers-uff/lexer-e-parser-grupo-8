@@ -56,6 +56,10 @@ WhiteSpace = [ \t]
 LineBreak  = \r|\n|\r\n
 
 IntegerLiteral = 0 | [1-9][0-9]*
+Letter = [a-zA-Z_]
+Digit = [0-9]
+Identifier = {Letter}({Letter}|{Digit})*
+Comment = \#.*
 
 %%
 
@@ -66,14 +70,50 @@ IntegerLiteral = 0 | [1-9][0-9]*
   {LineBreak}                 { return symbol(ChocoPyTokens.NEWLINE); }
 
   /* Literals. */
-  {IntegerLiteral}            { return symbol(ChocoPyTokens.NUMBER,
-                                                 Integer.parseInt(yytext())); }
+  {IntegerLiteral}            { return symbol(ChocoPyTokens.NUMBER, Integer.parseInt(yytext())); }
 
   /* Operators. */
-  "+"                         { return symbol(ChocoPyTokens.PLUS, yytext()); }
+  "+"                         { return symbol(ChocoPyTokens.PLUS); }
+  "-"                         { return symbol(ChocoPyTokens.MINUS); }
+  "*"                         { return symbol(ChocoPyTokens.TIMES); }
+  "/"                         { return symbol(ChocoPyTokens.DIVIDE); }
+  "%"                         { return symbol(ChocoPyTokens.MOD); }
+  "="                         { return symbol(ChocoPyTokens.ASSIGN); }
+  "=="                        { return symbol(ChocoPyTokens.EQ); }
+  "!="                        { return symbol(ChocoPyTokens.NEQ); }
+  "<"                         { return symbol(ChocoPyTokens.LT); }
+  ">"                         { return symbol(ChocoPyTokens.GT); }
+  ">="                        { return symbol(ChocoPyTokens.GEQ); }
+  "<="                        { return symbol(ChocoPyTokens.LEQ); }
 
-  /* Whitespace. */
-  {WhiteSpace}                { /* ignore */ }
+  /* Delimiters. */
+  "("                         { return symbol(ChocoPyTokens.LPAREN); }
+  ")"                         { return symbol(ChocoPyTokens.RPAREN); }
+  "{"                         { return symbol(ChocoPyTokens.LBRACE); }
+  "}"                         { return symbol(ChocoPyTokens.RBRACE); }
+  "["                         { return symbol(ChocoPyTokens.LBRACKET); }
+  "]"                         { return symbol(ChocoPyTokens.RBRACKET); }
+  ","                         { return symbol(ChocoPyTokens.COMMA); }
+  ":"                         { return symbol(ChocoPyTokens.COLON); }
+  
+  /* Keywords. */
+  "if"                        { return symbol(ChocoPyTokens.IF); }
+  "else"                      { return symbol(ChocoPyTokens.ELSE); }
+  "while"                     { return symbol(ChocoPyTokens.WHILE); }
+  "def"                       { return symbol(ChocoPyTokens.DEF); }
+  "return"                    { return symbol(ChocoPyTokens.RETURN); }
+  "class"                     { return symbol(ChocoPyTokens.CLASS); }
+  "print"                     { return symbol(ChocoPyTokens.PRINT); }
+  "None"                      { return symbol(ChocoPyTokens.NONE); }
+  "True"                      { return symbol(ChocoPyTokens.TRUE); }
+  "False"                     { return symbol(ChocoPyTokens.FALSE); }
+
+  /* Identifiers. */
+  {Identifier}                { return symbol(ChocoPyTokens.IDENTIFIER, yytext()); }
+
+  /* Ignore */
+  {Comment}                   { /* Ignora comentários */ }
+  {WhiteSpace}                { /* Ignora espaço em branco */ }
 }
 
 <<EOF>>                       { return symbol(ChocoPyTokens.EOF); }
