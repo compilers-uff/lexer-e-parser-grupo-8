@@ -143,8 +143,14 @@ action code {:
  * in actions ( {: ... :} ).
  */
 terminal NEWLINE;
-terminal String PLUS; 
-terminal Integer NUMBER; 
+terminal String PLUS, MINUS, TIMES, DIVIDE, MOD, ASSIGN;
+terminal String EQ, NEQ, LT, GT, LEQ, GEQ;
+terminal String LPAREN, RPAREN, LBRACE, RBRACE;
+terminal String LBRACKET, RBRACKET, COMMA, COLON;
+terminal String IF, ELSE, WHILE, DEF, RETURN, CLASS, PRINT, NONE, TRUE, FALSE;
+terminal Integer NUMBER;
+terminal String IDENTIFIER;
+terminal UNRECOGNIZED;
 /* Returned by the lexer for erroneous tokens.  Since it does not appear in
  * the grammar, it indicates a syntax error. */
 terminal UNRECOGNIZED;   
@@ -162,7 +168,9 @@ non terminal Expr              expr, binary_expr;
 
 /* Precedences (lowest to highest) for resolving what would otherwise be
  * ambiguities in the form of shift/reduce conflicts.. */
-precedence left PLUS;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIVIDE, MOD;
+precedence nonassoc EQ, NEQ, LT, GT, LEQ, GEQ;
 
 /* The start symbol. */
 start with program;
