@@ -150,7 +150,6 @@ terminal String LBRACKET, RBRACKET, COMMA, COLON;
 terminal String IF, ELSE, WHILE, DEF, RETURN, CLASS, PRINT, NONE, TRUE, FALSE;
 terminal Integer NUMBER;
 terminal String IDENTIFIER;
-terminal UNRECOGNIZED;
 /* Returned by the lexer for erroneous tokens.  Since it does not appear in
  * the grammar, it indicates a syntax error. */
 terminal UNRECOGNIZED;   
