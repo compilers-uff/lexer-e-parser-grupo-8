@@ -145,32 +145,51 @@ action code {:
 terminal NEWLINE;
 terminal String PLUS, MINUS, TIMES, DIVIDE, MOD, ASSIGN;
 terminal String EQ, NEQ, LT, GT, LEQ, GEQ;
-terminal String LPAREN, RPAREN, LBRACE, RBRACE;
-terminal String LBRACKET, RBRACKET, COMMA, COLON;
-terminal String IF, ELSE, WHILE, DEF, RETURN, CLASS, PRINT, NONE, TRUE, FALSE;
+terminal String LPAREN, RPAREN, LBRACE, RBRACE, LBRACKET, RBRACKET;
+terminal String COMMA, COLON, DOT, ARROW;
+terminal String IF, ELSE, WHILE, FOR, DEF, RETURN, CLASS, PRINT, NONE, TRUE, FALSE, PASS, IS, IN;
 terminal Integer NUMBER;
-terminal String IDENTIFIER;
+terminal String STRING;
+terminal INDENT, DEDENT;
+terminal String GLOBAL, NONLOCAL;
 terminal UNRECOGNIZED;
-/* Returned by the lexer for erroneous tokens.  Since it does not appear in
- * the grammar, it indicates a syntax error. */
-terminal UNRECOGNIZED;   
 
 /* Nonterminal symbols (defined in production rules below).
  * As for terminal symbols, 
  *     non terminal <type> <identifier1>, ..., <identifiern>; 
  * defines the listed nonterminal identifier symbols to have semantic values
  * of type <type>. */
-non terminal Program           program;
-non terminal List<Declaration> program_head;
-non terminal List<Stmt>        stmt_list, opt_stmt_list;
-non terminal Stmt              stmt, expr_stmt;
-non terminal Expr              expr, binary_expr;
+non terminal Program            program;
+non terminal List<Declaration>  program_head;
+non terminal List<Stmt>         stmt_list, opt_stmt_list;
+non terminal Stmt               stmt, expr_stmt;
+non terminal Expr               expr, binary_expr;
+non terminal Identifier         id;
+non terminal ClassDef           class_definition;
+non terminal FuncDef            function_definition;
+non terminal List<Declaration>  class_body, function_body;
+non terminal TypeVar            typed_variable;
+non terminal List<TypeVar>      list_tp;
+non terminal TypeAnnotation     type;
+non terminal Declaration        global_definition, nonlocal_definition;
+non terminal VarDef             var_definiton;
+non terminal List<Stmt>         block;
+non terminal IndexExpr          index_expr;
+non terminal MemberExpr         member_expr;
+non terminal literal            literal;
+non terminal MemberExpr         member_expr;
+non terminal IndexExpr          index_expr;
+
 
 /* Precedences (lowest to highest) for resolving what would otherwise be
  * ambiguities in the form of shift/reduce conflicts.. */
+precedence right IF, ELSE;
+precedence left AND, OR;
+precedence nonassoc NOT;
+precedence nonassoc EQ, NEQ, LT, GT, LEQ, GEQ;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIVIDE, MOD;
-precedence nonassoc EQ, NEQ, LT, GT, LEQ, GEQ;
+precedence left DOT, COMMA, LBRACKET, RBRACKET;
 
 /* The start symbol. */
 start with program;
@@ -179,10 +198,9 @@ start with program;
 /*****  GRAMMAR RULES *****/
 
 program ::= program_head:d opt_stmt_list:s
-        {: RESULT = new Program(d.isEmpty() ? getLeft(s) : getLeft(d),
-                                sxright, d, s, errors);
-        :}
+        {: RESULT = new Program(d.isEmpty() ? getLeft(s) : getLeft(d), sxright, d, s, errors); :}
         ;
+
 
 /* Initial list of declarations. */
 program_head ::= /* not implemented; currently matches empty string */
@@ -193,30 +211,160 @@ opt_stmt_list ::=                    {: RESULT = empty(); :}
                 | stmt_list:s        {: RESULT = s; :}
                 ;
 
-stmt_list ::= stmt:s                 {: RESULT = single(s); :}
-            | stmt_list:l stmt:s     {: RESULT = combine(l, s); :}
-            | stmt_list:l error      {: RESULT = l; :}
-            /* If there is a syntax error in the source, this says to discard
-             * symbols from the parsing stack and perform reductions until
-             * there is a stmt_list on top of the stack, and then to discard
-             * input symbols until it is possible to shift again, reporting
-             * a syntax error. */
-            ;
 
-stmt ::= expr_stmt:s NEWLINE {: RESULT = s; :}
-              ;
+/* Definição de classe */
+class_definition ::= CLASS:class id:identifier LPAREN id:identifier_root RPAREN COLON NEWLINE INDENT class_body:cb DEDENT
+        {: RESULT = new ClassDef(classxleft, getLeft(cb), identifier, identifier_root, cb); :}
+        ;
 
-expr_stmt ::= expr:e    {: RESULT = new ExprStmt(exleft, exright, e); :}
-            ;
+class_body ::= PASS:pass                                        {: RESULT = empty(); :}
+             | class_body:class_b error:error                   {: RESULT = class_b; :}
+             | var_definiton:var_d                              {: RESULT = single(var_d); :}
+             | function_definition:func_d                       {: RESULT = single(func_d); :}
+             | class_body:class_b var_definiton:var_d           {: RESULT = combine(class_b, var_d); :}
+             | class_body:class_b function_definition:func_d    {: RESULT = (class_b, func_d); :}
+             ;
 
-expr ::= binary_expr:e  {: RESULT = e; :}
-       | NUMBER:n       {: RESULT = new IntegerLiteral(nxleft, nxright, n); :}
+
+/* Definição de função */
+function_definition ::= DEF:def id:identifier LPAREN list_tp:lt RPAREN ARROW type:t COLON NEWLINE INDENT function_body:func_b stmt_list:stmt DEDENT
+        {}
+        ;
+
+function_body ::=                                                       {: RESULT = empty(); :}
+                | function_body:func_b error:error                      {: RESULT = func_b; :}
+                | function_body:func_b global_definition:glob_d         {: RESULT = combine(func_b, glob_d); :}
+                | function_body:func_b nonlocal_definition:nonl_d       {: RESULT = combine(func_b, nonl_d); :}
+                | function_body:func_b var_definiton:var_d              {: RESULT = combine(func_b, var_d); :}
+                | function_body:func_b function_definition:func_d       {: RESULT = combine(func_b, func_d); :}
+                ;
+
+
+/* Definição da lista de parâmetros para a função */
+list_tp ::=                                             {: RESULT = empty(); :}
+          | list_tp:lt COMMA error                      {: RESULT = lt; :}
+          | typed_variable:type_v                       {: RESULT = single(type_v); :}
+          | list_tp:lt COMMA typed_variable:type_v      {: RESULT = combine(lt, type_v); :}
+          ;
+
+/* Variável tipada*/
+typed_variable ::= id:identifier COLON type:t   {: RESULT = new TypeVariable(identifierxleft, identifierxright, identifier, t); :};
+
+
+/* Tipos */
+type ::= id:identifier                                  {: RESULT = new Type(identifierxleft, identifierxright, identifier.name); :}
+       | NONE:n                                         {: RESULT = new NoneType(nxleft, nxright); :}
+       | TRUE:t                                         {: RESULT = new BoolType(txleft, txright, true); :}
+       | FALSE:f                                        {: RESULT = new BoolType(fxleft, fxright, false); :}
+       | NUMBER:n                                       {: RESULT = new IntType(nxleft, nxright); :}
+       | STRING:s                                       {: RESULT = new StringType(sxleft, sxright); :}
+       | LBRACKET LBRACKET type:t RBRACKET RBRACKET     {: RESULT = new ListType(typexleft, typexright, t); :}
        ;
 
 
-/* A binary expression, illustrating how to find the left and right
- * source position of a phrase. */
-binary_expr ::= expr:e1 PLUS:op expr:e2
-                        {: RESULT = new BinaryExpr(e1xleft, e2xright,
-                                                   e1, op, e2); :}
+/* Variáveis globais e não-locais */
+global_definition ::= GLOBAL:global id:identifier NEWLINE       {: RESULT = new GlobalDef(globalxleft, globalxright, id); :};
+
+nonlocal_definition ::= NONLOCAL:nonlocal id:identifier NEWLINE     {: RESULT = new NonLocalDecl(nonlocalxleft, nonlocalxright, id); :};
+
+
+/* Definição de variável */
+var_definiton ::= typed_variable: ty_var EQ literal:literal NEWLINE     {: RESULT = new VarDef(ty_varxleft, literalxright, ty_var, literal); :};
+
+
+/*  */
+stmt_list ::= stmt:s                 {: RESULT = single(s); :}
+            | stmt_list:l stmt:s     {: RESULT = combine(l, s); :}
+            | stmt_list:l error      {: RESULT = l; :}
+            ;
+
+stmt ::= stmt_simple:stmt_s NEWLINE {: RESULT = stmt_s; :} 
+       | IF:if expr:expr COLON block:block                          {: RESULT = new IfStmt(ixleft, getLeft(block), expr, block, empty()); :}
+       | IF:if expr:expr COLON block:block elif_expression:elif_e   {: RESULT = new IfStmt(ixleft, getLeft(elif_e), expr, block, elif_e); :}
+       | WHILE:while expr:expr COLON block:block                    {: RESULT = new WhileStmt(whilexleft, getLeft(block), expr, block); :}
+       | FOR:for id:identifier IN expr:expr COLON block:block       {: RESULT = new ForStmt(forxleft, getLeft(block), identifier, expr); :}
+       ;
+
+stmt_simple ::= PASS:pass                   {: RESULT = null; :}
+              | expr:expr                   {: RESULT = new ExprStmt(exprxleft, exprxright, expr); :}
+              | RETURN:return               {: RESULT = new ReturnStmt(returnxleft, returnxright, null); :}
+              | RETURN:return expr:expr     {: RESULT = new ReturnStmt(returnxleft, returnxright, expr); :}
+              | 
+              ;
+
+
+/* Definições dos condicionais */
+elif_expression ::= ELIF:elif expr:expr COLON block:block                           {: RESULT = single(new IfStmt(elxleft, getLeft(block), expr, block, empty())); :}
+                  | ELIF:elif expr:expr COLON block:block elif_expression:elif_e    {: RESULT = single(new IfStmt(elxleft, getLeft(elif_e), expr, block, elif_e)); :}
+                  | else_expression:else_e                                          {: RESULT = else_e; :}
+                  ;
+
+else_expression ::= ELSE COLON block:block  {: RESULT = block; :}
+
+
+/* Definição de bloco */
+block ::= NEWLINE INDENT stmt_list:stmt DEDENT      {: RESULT = stmt; :} ;
+
+
+/* Definição de Literais */
+literal ::= NONE:none           {: RESULT = new NoneLiteral(nexleft, nexright); :}
+          | TRUE:true           {: RESULT = new BoolLiteral(truexleft, truexright, true); :}
+          | FALSE:false         {: RESULT = new BoolLiteral(falsexleft, falsexright, false); :}
+          | NUMBER:n            {: RESULT = new IntegerLiteral(nxleft, nxright, n); :}
+          | STRING:s            {: RESULT = new StringLiteral(sxleft, sxright, s); :}
+          ;
+
+
+/* Definição de expressões */
+expr ::= cexpr:cexpr                                    {: RESULT = cexpr; :}
+        | NOT expr:expr                                 {: RESULT = new UnaryExpr(exprxleft, exprxright, NOT, expr); :}
+        | expr:expr_1 AND expr:expr_2                   {: RESULT = new BinaryExpr(exprxleft, exprxright, expr_1, AND, expr_2); :}
+        | expr:expr_1 OR expr:expr_2                    {: RESULT = new BinaryExpr(exprxleft, exprxright, expr_1, OR, expr_2); :}
+        | expr:expr_1 IF expr:expr_2 ELSE expr:expr_3   {: RESULT = new IfExpr(exprxleft, exprxright, expr_1, expr_2, expr_3); :}
+        ;
+
+cexpr ::= id:identifier                                     {: RESULT = id; :}
+        | literal:literal                                   {: RESULT = literal; :}
+        | LBRACKET expr_list:ex_l RBRACKET                  {: RESULT = new ListExpr(ex_lxleft, ex_lxright, ex_l); :}
+        | LPAREN expr:expr RPAREN                           {: RESULT = expr; :} {: RESULT = expr; :}
+        | member_expr:member_e                              {: RESULT = member_e; :}
+        | index_expr:index_e                                {: RESULT = index_e; :}
+        | member_e LPAREN expr_list:ex_l RPAREN             {: RESULT = new MethodCallExpr(member_exleft, member_exright, member_e, ex_l); :}
+        | id:identifier LPAREN expr_list:ex_l RPAREN        {: RESULT = new CallExpr(idxleft, idxright, id, ex_l); :}
+        | cexpr:cexpr_1 binary_expr:bin_e cexpr:cexpr_2     {: RESULT = new BinaryExpr(cexprxleft, cexprxright, cexpr_1, bin_e, cexpr_2); :}
+        | MINUS:op cexpr:cexpr                              {: RESULT = new UnaryExpr(cexprxleft, cexprxright, op, cexpr); :}
+        | cexpr:cexpr                                       {: RESULT = cexpr; :}
+        ;
+
+member_expr ::= cexpr:cexpr DOT id:identifier   {: RESULT = new MemberExpr(cexprxleft, idxright, cexpr, id); :};
+
+index_expr ::= cexpr:cexpr LBRACKET expr:expr RBRACKET  {: RESULT = new IndexExpr(cexprxleft, idxright, cexpr, expr); :};
+
+target ::= id:identifier                {: RESULT = id; :}
+          | member_expr:member_e        {: RESULT = member_e; :}
+          | index_expr:index_e          {: RESULT = index_e; :}
+          ;
+
+
+/* Lista de expressões */
+expr_list ::=                                       {: RESULT = empty(); :}
+            | expr_list:expr_l error:error          {: RESULT = expr_l; :}
+            | expr:expr                             {: RESULT = single(expr); :}
+            | expr_list:expr_l COMMA expr:expr      {: RESULT = combine(expr_l, expr); :}
+            ;
+
+
+/* Definições de expressões binárias */
+binary_expr ::= expr:e1 PLUS:op expr:e2      {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 MINUS:op expr:e2     {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 TIMES:op expr:e2     {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 DIVIDE:op expr:e2    {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 MOD:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 EQ:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 NEQ:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 LT:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 GT:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 GEQ:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 LEQ:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 IS:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
               ;

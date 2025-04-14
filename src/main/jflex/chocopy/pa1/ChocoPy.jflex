@@ -54,7 +54,6 @@ import java_cup.runtime.*;
 
 WhiteSpace = [ \t]
 LineBreak  = \r|\n|\r\n
-
 IntegerLiteral = 0 | [1-9][0-9]*
 Letter = [a-zA-Z_]
 Digit = [0-9]
@@ -76,7 +75,7 @@ Comment = \#.*
   "+"                         { return symbol(ChocoPyTokens.PLUS); }
   "-"                         { return symbol(ChocoPyTokens.MINUS); }
   "*"                         { return symbol(ChocoPyTokens.TIMES); }
-  "/"                         { return symbol(ChocoPyTokens.DIVIDE); }
+  "//"                        { return symbol(ChocoPyTokens.DIVIDE); }
   "%"                         { return symbol(ChocoPyTokens.MOD); }
   "="                         { return symbol(ChocoPyTokens.ASSIGN); }
   "=="                        { return symbol(ChocoPyTokens.EQ); }
@@ -95,11 +94,15 @@ Comment = \#.*
   "]"                         { return symbol(ChocoPyTokens.RBRACKET); }
   ","                         { return symbol(ChocoPyTokens.COMMA); }
   ":"                         { return symbol(ChocoPyTokens.COLON); }
+  "."                         { return symbol(ChocoPyTokens.DOT); }
+  "->"                        { return symbol(ChocoPyTokens.ARROW); }
   
   /* Keywords. */
   "if"                        { return symbol(ChocoPyTokens.IF); }
+  "elif"                      { return symbol(ChocoPyTokens.ELIF); }
   "else"                      { return symbol(ChocoPyTokens.ELSE); }
   "while"                     { return symbol(ChocoPyTokens.WHILE); }
+  "for"                       { return symbol(ChocoPyTokens.FOR); }
   "def"                       { return symbol(ChocoPyTokens.DEF); }
   "return"                    { return symbol(ChocoPyTokens.RETURN); }
   "class"                     { return symbol(ChocoPyTokens.CLASS); }
@@ -107,6 +110,12 @@ Comment = \#.*
   "None"                      { return symbol(ChocoPyTokens.NONE); }
   "True"                      { return symbol(ChocoPyTokens.TRUE); }
   "False"                     { return symbol(ChocoPyTokens.FALSE); }
+  "pass"                      { return symbol(ChocoPyTokens.PASS); }
+  "is"                        { return symbol(ChocoPyTokens.IS); }
+  "in"                        { return symbol(ChocoPyTokens.IN); }
+  "global"                    { return symbol(ChocoPyTokens.GLOBAL); }
+  "nonlocal"                  { return symbol(ChocoPyTokens.NONLOCAL); }
+  "not"                       { return symbol(ChocoPyTokens.NOT); }
 
   /* Identifiers. */
   {Identifier}                { return symbol(ChocoPyTokens.IDENTIFIER, yytext()); }
