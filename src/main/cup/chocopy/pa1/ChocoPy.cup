@@ -147,11 +147,15 @@ terminal String PLUS, MINUS, TIMES, DIVIDE, MOD, ASSIGN;
 terminal String EQ, NEQ, LT, GT, LEQ, GEQ;
 terminal String LPAREN, RPAREN, LBRACE, RBRACE, LBRACKET, RBRACKET;
 terminal String COMMA, COLON, DOT, ARROW;
-terminal String IF, ELSE, WHILE, FOR, DEF, RETURN, CLASS, PRINT, NONE, TRUE, FALSE, PASS, IS, IN;
+terminal String IF, ELIF, ELSE, WHILE, FOR; 
+terminal String DEF, RETURN, CLASS, PRINT;
+terminal String NONE, TRUE, FALSE, PASS, IS, IN; 
+terminal String NOT, AND, OR;
 terminal Integer NUMBER;
 terminal String STRING;
-terminal INDENT, DEDENT;
 terminal String GLOBAL, NONLOCAL;
+terminal String IDENTIFIER;
+terminal INDENT, DEDENT;
 terminal UNRECOGNIZED;
 
 /* Nonterminal symbols (defined in production rules below).
@@ -172,13 +176,15 @@ non terminal TypeVar            typed_variable;
 non terminal List<TypeVar>      list_tp;
 non terminal TypeAnnotation     type;
 non terminal Declaration        global_definition, nonlocal_definition;
-non terminal VarDef             var_definiton;
+non terminal VarDef             var_definition;
 non terminal List<Stmt>         block;
 non terminal IndexExpr          index_expr;
 non terminal MemberExpr         member_expr;
 non terminal literal            literal;
-non terminal MemberExpr         member_expr;
-non terminal IndexExpr          index_expr;
+non terminal Stmt               stmt_simple;
+non terminal List<Stmt>         elif_expression, else_expression;
+non terminal Expr               cexpr, target;
+non terminal List<Expr>         expr_list;
 
 
 /* Precedences (lowest to highest) for resolving what would otherwise be
@@ -217,25 +223,25 @@ class_definition ::= CLASS:class id:identifier LPAREN id:identifier_root RPAREN 
         {: RESULT = new ClassDef(classxleft, getLeft(cb), identifier, identifier_root, cb); :}
         ;
 
-class_body ::= PASS:pass                                        {: RESULT = empty(); :}
-             | class_body:class_b error:error                   {: RESULT = class_b; :}
-             | var_definiton:var_d                              {: RESULT = single(var_d); :}
-             | function_definition:func_d                       {: RESULT = single(func_d); :}
-             | class_body:class_b var_definiton:var_d           {: RESULT = combine(class_b, var_d); :}
-             | class_body:class_b function_definition:func_d    {: RESULT = (class_b, func_d); :}
+class_body ::= PASS:pass                                         {: RESULT = empty(); :}
+             | class_body:class_b error:error                    {: RESULT = class_b; :}
+             | var_definition:var_d                              {: RESULT = single(var_d); :}
+             | function_definition:func_d                        {: RESULT = single(func_d); :}
+             | class_body:class_b var_definition:var_d           {: RESULT = combine(class_b, var_d); :}
+             | class_body:class_b function_definition:func_d     {: RESULT = combine(class_b, func_d); :}
              ;
 
 
 /* Definição de função */
-function_definition ::= DEF:def id:identifier LPAREN list_tp:lt RPAREN ARROW type:t COLON NEWLINE INDENT function_body:func_b stmt_list:stmt DEDENT
+/*function_definition ::= DEF:def id:identifier LPAREN list_tp:lt RPAREN ARROW type:t COLON NEWLINE INDENT function_body:func_b stmt_list:stmt DEDENT
         {}
-        ;
+        ;*/
 
 function_body ::=                                                       {: RESULT = empty(); :}
                 | function_body:func_b error:error                      {: RESULT = func_b; :}
                 | function_body:func_b global_definition:glob_d         {: RESULT = combine(func_b, glob_d); :}
                 | function_body:func_b nonlocal_definition:nonl_d       {: RESULT = combine(func_b, nonl_d); :}
-                | function_body:func_b var_definiton:var_d              {: RESULT = combine(func_b, var_d); :}
+                | function_body:func_b var_definition:var_d             {: RESULT = combine(func_b, var_d); :}
                 | function_body:func_b function_definition:func_d       {: RESULT = combine(func_b, func_d); :}
                 ;
 
@@ -269,7 +275,7 @@ nonlocal_definition ::= NONLOCAL:nonlocal id:identifier NEWLINE     {: RESULT = 
 
 
 /* Definição de variável */
-var_definiton ::= typed_variable: ty_var EQ literal:literal NEWLINE     {: RESULT = new VarDef(ty_varxleft, literalxright, ty_var, literal); :};
+var_definition ::= typed_variable: ty_var EQ literal:literal NEWLINE     {: RESULT = new VarDef(ty_varxleft, literalxright, ty_var, literal); :};
 
 
 /*  */
@@ -282,14 +288,13 @@ stmt ::= stmt_simple:stmt_s NEWLINE {: RESULT = stmt_s; :}
        | IF:if expr:expr COLON block:block                          {: RESULT = new IfStmt(ixleft, getLeft(block), expr, block, empty()); :}
        | IF:if expr:expr COLON block:block elif_expression:elif_e   {: RESULT = new IfStmt(ixleft, getLeft(elif_e), expr, block, elif_e); :}
        | WHILE:while expr:expr COLON block:block                    {: RESULT = new WhileStmt(whilexleft, getLeft(block), expr, block); :}
-       | FOR:for id:identifier IN expr:expr COLON block:block       {: RESULT = new ForStmt(forxleft, getLeft(block), identifier, expr); :}
+       | FOR:for id:identifier IN expr:expr COLON block:block       {: RESULT = new ForStmt(forxleft, getLeft(block), identifier, expr, block); :}
        ;
 
 stmt_simple ::= PASS:pass                   {: RESULT = null; :}
               | expr:expr                   {: RESULT = new ExprStmt(exprxleft, exprxright, expr); :}
               | RETURN:return               {: RESULT = new ReturnStmt(returnxleft, returnxright, null); :}
               | RETURN:return expr:expr     {: RESULT = new ReturnStmt(returnxleft, returnxright, expr); :}
-              | 
               ;
 
 
@@ -299,11 +304,11 @@ elif_expression ::= ELIF:elif expr:expr COLON block:block                       
                   | else_expression:else_e                                          {: RESULT = else_e; :}
                   ;
 
-else_expression ::= ELSE COLON block:block  {: RESULT = block; :}
+else_expression ::= ELSE COLON block:block  {: RESULT = block; :};
 
 
 /* Definição de bloco */
-block ::= NEWLINE INDENT stmt_list:stmt DEDENT      {: RESULT = stmt; :} ;
+block ::= NEWLINE INDENT stmt_list:stmt_l DEDENT      {: RESULT = stmt_l; :} ;
 
 
 /* Definição de Literais */
@@ -329,7 +334,7 @@ cexpr ::= id:identifier                                     {: RESULT = id; :}
         | LPAREN expr:expr RPAREN                           {: RESULT = expr; :} {: RESULT = expr; :}
         | member_expr:member_e                              {: RESULT = member_e; :}
         | index_expr:index_e                                {: RESULT = index_e; :}
-        | member_e LPAREN expr_list:ex_l RPAREN             {: RESULT = new MethodCallExpr(member_exleft, member_exright, member_e, ex_l); :}
+        | member_expr:member_e LPAREN expr_list:ex_l RPAREN             {: RESULT = new MethodCallExpr(member_exleft, member_exright, member_e, ex_l); :}
         | id:identifier LPAREN expr_list:ex_l RPAREN        {: RESULT = new CallExpr(idxleft, idxright, id, ex_l); :}
         | cexpr:cexpr_1 binary_expr:bin_e cexpr:cexpr_2     {: RESULT = new BinaryExpr(cexprxleft, cexprxright, cexpr_1, bin_e, cexpr_2); :}
         | MINUS:op cexpr:cexpr                              {: RESULT = new UnaryExpr(cexprxleft, cexprxright, op, cexpr); :}
@@ -368,3 +373,7 @@ binary_expr ::= expr:e1 PLUS:op expr:e2      {: RESULT = new BinaryExpr(e1xleft,
               | expr:e1 LEQ:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
               | expr:e1 IS:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
               ;
+
+
+/* Regra para não terminal */
+id ::= IDENTIFIER:id {: RESULT = new Identifier(idxleft, idxright, id); :};
