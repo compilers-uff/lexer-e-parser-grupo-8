@@ -1,5 +1,6 @@
 package chocopy.pa1;
 import java_cup.runtime.*;
+import java.util.Stack;
 
 %%
 
@@ -48,6 +49,12 @@ import java_cup.runtime.*;
             value);
     }
 
+    // Pilha para rastrear níveis de indentação
+    private Stack<Integer> indentStack = new Stack<Integer>() {{ push(0); }};
+    private boolean atStartOfLine = true;
+    private int currentIndent = 0;
+
+
 %}
 
 /* Macros (regexes used in rules below) */
@@ -66,7 +73,49 @@ Comment = \#.*
 <YYINITIAL> {
 
   /* Delimiters. */
-  {LineBreak}                 { return symbol(ChocoPyTokens.NEWLINE); }
+  {LineBreak}                 { atStartOfLine = true; return symbol(ChocoPyTokens.NEWLINE); }
+
+    // --- Linhas sem whitespace no início (DEDENT explícito) ---
+    ^[^ \t]+ {
+        if (atStartOfLine) {
+            int top = indentStack.peek();
+            if (top > 0) {
+                // 1. Emite DEDENT
+                indentStack.pop();
+                System.out.println(yylength());
+                yypushback(yylength());
+                System.out.println(yylength());
+                // 3. Força reprocessamento
+                atStartOfLine = false; 
+                System.out.println(atStartOfLine);
+                yybegin(YYINITIAL);
+                return symbol(ChocoPyTokens.DEDENT);
+            }
+            atStartOfLine = false;
+        }
+    }
+
+
+    // Verifica indentação no início da linha
+    ^{WhiteSpace}+     {
+                          if (atStartOfLine) {
+            currentIndent = yytext().replace("\t", "    ").length();
+            int top = indentStack.peek();
+            if (currentIndent > top) {
+                indentStack.push(currentIndent);
+                return symbol(ChocoPyTokens.INDENT);
+            } else if (currentIndent < top) {
+                indentStack.pop();
+                yypushback(yylength());
+                return symbol(ChocoPyTokens.DEDENT);
+            }
+            atStartOfLine = false;
+        }
+                       }    
+
+    // --- Ignora whitespace no meio da linha ---
+    {WhiteSpace}+     { /* Ignora espaços/tabs fora do início da linha */ }
+
 
   /* Literals. */
   {IntegerLiteral}            { return symbol(ChocoPyTokens.NUMBER, Integer.parseInt(yytext())); }
@@ -122,10 +171,17 @@ Comment = \#.*
 
   /* Ignore */
   {Comment}                   { /* Ignora comentários */ }
-  {WhiteSpace}                { /* Ignora espaço em branco */ }
 }
 
-<<EOF>>                       { return symbol(ChocoPyTokens.EOF); }
+<<EOF>>                       { 
+    if (!indentStack.isEmpty()) {
+        indentStack.pop(); // Remove o 0 inicial
+        while (!indentStack.isEmpty()) {
+            indentStack.pop();
+            return symbol(ChocoPyTokens.DEDENT);
+        }
+    }
+    return symbol(ChocoPyTokens.EOF); }
 
 /* Error fallback. */
 [^]                           { return symbol(ChocoPyTokens.UNRECOGNIZED); }
