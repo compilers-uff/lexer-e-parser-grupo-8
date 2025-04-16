@@ -54,10 +54,10 @@ import java.util.Stack;
     private boolean atStartOfLine = true;
     private int currentIndent = 0;
 
-
 %}
 
 %xstate IDENTATION
+%xstate RESTO
 
 
 /* Macros (regexes used in rules below) */
@@ -75,14 +75,17 @@ Comment = \#.*
 
 <YYINITIAL> {
 
-  /* Delimiters. */
-  {LineBreak}                 { atStartOfLine = true; return symbol(ChocoPyTokens.NEWLINE); }
-
     // --- Linhas sem whitespace no início (DEDENT explícito) ---
-    ^[^ \t]+ {
+    [^ \t]+ {
         if (atStartOfLine) {
+          //  System.out.println(atStartOfLine);
             yypushback(yylength());
             yybegin(IDENTATION);
+        }
+        else{
+          //  System.out.println(atStartOfLine);
+            yypushback(yylength());
+            yybegin(RESTO);
         }
     }
 
@@ -99,103 +102,115 @@ Comment = \#.*
     {WhiteSpace}+     { /* Ignora espaços/tabs fora do início da linha */ }
 
 
-  /* Literals. */
-  {IntegerLiteral}            { return symbol(ChocoPyTokens.NUMBER, Integer.parseInt(yytext())); }
-
-  /* Operators. */
-  "+"                         { return symbol(ChocoPyTokens.PLUS); }
-  "-"                         { return symbol(ChocoPyTokens.MINUS); }
-  "*"                         { return symbol(ChocoPyTokens.TIMES); }
-  "//"                        { return symbol(ChocoPyTokens.DIVIDE); }
-  "%"                         { return symbol(ChocoPyTokens.MOD); }
-  "="                         { return symbol(ChocoPyTokens.ASSIGN); }
-  "=="                        { return symbol(ChocoPyTokens.EQ); }
-  "!="                        { return symbol(ChocoPyTokens.NEQ); }
-  "<"                         { return symbol(ChocoPyTokens.LT); }
-  ">"                         { return symbol(ChocoPyTokens.GT); }
-  ">="                        { return symbol(ChocoPyTokens.GEQ); }
-  "<="                        { return symbol(ChocoPyTokens.LEQ); }
-
-  /* Delimiters. */
-  "("                         { return symbol(ChocoPyTokens.LPAREN); }
-  ")"                         { return symbol(ChocoPyTokens.RPAREN); }
-  "{"                         { return symbol(ChocoPyTokens.LBRACE); }
-  "}"                         { return symbol(ChocoPyTokens.RBRACE); }
-  "["                         { return symbol(ChocoPyTokens.LBRACKET); }
-  "]"                         { return symbol(ChocoPyTokens.RBRACKET); }
-  ","                         { return symbol(ChocoPyTokens.COMMA); }
-  ":"                         { return symbol(ChocoPyTokens.COLON); }
-  "."                         { return symbol(ChocoPyTokens.DOT); }
-  "->"                        { return symbol(ChocoPyTokens.ARROW); }
   
-  /* Keywords. */
-  "if"                        { return symbol(ChocoPyTokens.IF); }
-  "elif"                      { return symbol(ChocoPyTokens.ELIF); }
-  "else"                      { return symbol(ChocoPyTokens.ELSE); }
-  "while"                     { return symbol(ChocoPyTokens.WHILE); }
-  "for"                       { return symbol(ChocoPyTokens.FOR); }
-  "def"                       { return symbol(ChocoPyTokens.DEF); }
-  "return"                    { return symbol(ChocoPyTokens.RETURN); }
-  "class"                     { return symbol(ChocoPyTokens.CLASS); }
-  "print"                     { return symbol(ChocoPyTokens.PRINT); }
-  "None"                      { return symbol(ChocoPyTokens.NONE); }
-  "True"                      { return symbol(ChocoPyTokens.TRUE); }
-  "False"                     { return symbol(ChocoPyTokens.FALSE); }
-  "pass"                      { return symbol(ChocoPyTokens.PASS); }
-  "is"                        { return symbol(ChocoPyTokens.IS); }
-  "in"                        { return symbol(ChocoPyTokens.IN); }
-  "global"                    { return symbol(ChocoPyTokens.GLOBAL); }
-  "nonlocal"                  { return symbol(ChocoPyTokens.NONLOCAL); }
-  "not"                       { return symbol(ChocoPyTokens.NOT); }
-
-  /* Identifiers. */
-  {Identifier}                { return symbol(ChocoPyTokens.IDENTIFIER, yytext()); }
-
-  /* Ignore */
-  {Comment}                   { /* Ignora comentários */ }
 }
 
-<IDENTATION>{
-    ^[^ \t]+ {
-        if (atStartOfLine) {
-            int top = indentStack.peek();
-            if (top > 0) {
-                // 1. Emite DEDENT
-                indentStack.pop();
-                System.out.println(yytext());
-                yypushback(yylength());
-               System.out.println(yytext());
-                // 3. Força reprocessamento
-                atStartOfLine = false; 
-               // System.out.println(atStartOfLine);
-                yybegin(YYINITIAL);
-                return symbol(ChocoPyTokens.DEDENT);
-            }
-            atStartOfLine = false;
-            yybegin(YYINITIAL);
-        }
-    }
 
+<RESTO>{
+
+    /* Delimiters. */
+  {LineBreak}                 { atStartOfLine = true; yybegin(YYINITIAL); return symbol(ChocoPyTokens.NEWLINE); }
+
+
+    /* Literals. */
+  {IntegerLiteral}            { yybegin(YYINITIAL); return symbol(ChocoPyTokens.NUMBER, Integer.parseInt(yytext())); }
+
+  /* Operators. */
+  "+"                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.PLUS); }
+  "-"                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.MINUS); }
+  "*"                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.TIMES); }
+  "//"                        { yybegin(YYINITIAL); return symbol(ChocoPyTokens.DIVIDE); }
+  "%"                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.MOD); }
+  "="                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.ASSIGN); }
+  "=="                        { yybegin(YYINITIAL); return symbol(ChocoPyTokens.EQ); }
+  "!="                        { yybegin(YYINITIAL); return symbol(ChocoPyTokens.NEQ); }
+  "<"                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.LT); }
+  ">"                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.GT); }
+  ">="                        { yybegin(YYINITIAL); return symbol(ChocoPyTokens.GEQ); }
+  "<="                        { yybegin(YYINITIAL); return symbol(ChocoPyTokens.LEQ); }
+
+  /* Delimiters. */
+  "("                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.LPAREN); }
+  ")"                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.RPAREN); }
+  "{"                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.LBRACE); }
+  "}"                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.RBRACE); }
+  "["                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.LBRACKET); }
+  "]"                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.RBRACKET); }
+  ","                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.COMMA); }
+  ":"                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.COLON); }
+  "."                         { yybegin(YYINITIAL); return symbol(ChocoPyTokens.DOT); }
+  "->"                        { yybegin(YYINITIAL); return symbol(ChocoPyTokens.ARROW); }
+  
+  /* Keywords. */
+  "if"                        { yybegin(YYINITIAL); return symbol(ChocoPyTokens.IF); }
+  "elif"                      { yybegin(YYINITIAL); return symbol(ChocoPyTokens.ELIF); }
+  "else"                      { yybegin(YYINITIAL); return symbol(ChocoPyTokens.ELSE); }
+  "while"                     { yybegin(YYINITIAL); return symbol(ChocoPyTokens.WHILE); }
+  "for"                       { yybegin(YYINITIAL); return symbol(ChocoPyTokens.FOR); }
+  "def"                       { yybegin(YYINITIAL); return symbol(ChocoPyTokens.DEF); }
+  "return"                    { yybegin(YYINITIAL); return symbol(ChocoPyTokens.RETURN); }
+  "class"                     { yybegin(YYINITIAL); return symbol(ChocoPyTokens.CLASS); }
+  "print"                     { yybegin(YYINITIAL); return symbol(ChocoPyTokens.PRINT); }
+  "None"                      { yybegin(YYINITIAL); return symbol(ChocoPyTokens.NONE); }
+  "True"                      { yybegin(YYINITIAL); return symbol(ChocoPyTokens.TRUE); }
+  "False"                     { yybegin(YYINITIAL); return symbol(ChocoPyTokens.FALSE); }
+  "pass"                      { yybegin(YYINITIAL); return symbol(ChocoPyTokens.PASS); }
+  "is"                        { yybegin(YYINITIAL); return symbol(ChocoPyTokens.IS); }
+  "in"                        { yybegin(YYINITIAL); return symbol(ChocoPyTokens.IN); }
+  "global"                    { yybegin(YYINITIAL); return symbol(ChocoPyTokens.GLOBAL); }
+  "nonlocal"                  { yybegin(YYINITIAL); return symbol(ChocoPyTokens.NONLOCAL); }
+  "not"                       { yybegin(YYINITIAL); return symbol(ChocoPyTokens.NOT); }
+
+  /* Identifiers. */
+  {Identifier}                { yybegin(YYINITIAL); return symbol(ChocoPyTokens.IDENTIFIER, yytext()); }
+
+  /* Ignore */
+  {Comment}                   { yybegin(YYINITIAL); /* Ignora comentários */ }
+}
+
+
+<IDENTATION>{
 
     // Verifica indentação no início da linha
     ^{WhiteSpace}+     {
-                          if (atStartOfLine) {
+            if (atStartOfLine) {
             currentIndent = yytext().replace("\t", "    ").length();
             int top = indentStack.peek();
+            
             if (currentIndent > top) {
                 indentStack.push(currentIndent);
+                atStartOfLine = false;
                 yybegin(YYINITIAL);
                 return symbol(ChocoPyTokens.INDENT);
             } else if (currentIndent < top) {
                 indentStack.pop();
                 yypushback(yylength());
+                atStartOfLine = false;
                 yybegin(YYINITIAL);
                 return symbol(ChocoPyTokens.DEDENT);
+            } else {
+                atStartOfLine = false;
+                yybegin(YYINITIAL);
             }
-            atStartOfLine = false;
-            yybegin(YYINITIAL);
         }
-                       }    
+    }   
+
+    ^[^ \t]+ {
+        if (atStartOfLine) {
+            int top = indentStack.peek();
+            if (top > 0) {
+                indentStack.pop();
+                yypushback(yylength());
+                atStartOfLine = false;
+                yybegin(YYINITIAL);
+                return symbol(ChocoPyTokens.DEDENT);
+            } else {
+                yypushback(yylength());
+                atStartOfLine = false;
+                yybegin(YYINITIAL);
+            }
+        }  
+    } 
 
 }
 
