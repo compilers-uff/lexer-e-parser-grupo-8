@@ -48,8 +48,19 @@ To sync with updates upstream:
 
 ## Submission writeup
 
-Team member 1: 
+Team member 1: Isadora Crescencio Verbicário Botelho
 
-Team member 2: 
+Team member 2: João Guilherme Couutinho Beltrão
+
+Team member 3: João Pedro Mateus Souza
+
+Agradecimentos: 
+
+Horas necessárias:
+
+Perguntas:
+    1 - 
+    2 -
+    3 -  
 
 (Students should edit this section with their write-up)

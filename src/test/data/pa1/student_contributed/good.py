@@ -2,6 +2,6 @@ if x:
     y = 1
     z = 2
     if z == 2:
-        b = 8
+        print(z)
     f = 6
-print(y)
+yeiwew = 8

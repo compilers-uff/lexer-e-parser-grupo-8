@@ -57,6 +57,9 @@ import java.util.Stack;
 
 %}
 
+%xstate IDENTATION
+
+
 /* Macros (regexes used in rules below) */
 
 WhiteSpace = [ \t]
@@ -78,20 +81,8 @@ Comment = \#.*
     // --- Linhas sem whitespace no início (DEDENT explícito) ---
     ^[^ \t]+ {
         if (atStartOfLine) {
-            int top = indentStack.peek();
-            if (top > 0) {
-                // 1. Emite DEDENT
-                indentStack.pop();
-                System.out.println(yylength());
-                yypushback(yylength());
-                System.out.println(yylength());
-                // 3. Força reprocessamento
-                atStartOfLine = false; 
-                System.out.println(atStartOfLine);
-                yybegin(YYINITIAL);
-                return symbol(ChocoPyTokens.DEDENT);
-            }
-            atStartOfLine = false;
+            yypushback(yylength());
+            yybegin(IDENTATION);
         }
     }
 
@@ -99,17 +90,8 @@ Comment = \#.*
     // Verifica indentação no início da linha
     ^{WhiteSpace}+     {
                           if (atStartOfLine) {
-            currentIndent = yytext().replace("\t", "    ").length();
-            int top = indentStack.peek();
-            if (currentIndent > top) {
-                indentStack.push(currentIndent);
-                return symbol(ChocoPyTokens.INDENT);
-            } else if (currentIndent < top) {
-                indentStack.pop();
-                yypushback(yylength());
-                return symbol(ChocoPyTokens.DEDENT);
-            }
-            atStartOfLine = false;
+                            yypushback(yylength());
+            yybegin(IDENTATION);
         }
                        }    
 
@@ -171,6 +153,50 @@ Comment = \#.*
 
   /* Ignore */
   {Comment}                   { /* Ignora comentários */ }
+}
+
+<IDENTATION>{
+    ^[^ \t]+ {
+        if (atStartOfLine) {
+            int top = indentStack.peek();
+            if (top > 0) {
+                // 1. Emite DEDENT
+                indentStack.pop();
+                System.out.println(yytext());
+                yypushback(yylength());
+               System.out.println(yytext());
+                // 3. Força reprocessamento
+                atStartOfLine = false; 
+               // System.out.println(atStartOfLine);
+                yybegin(YYINITIAL);
+                return symbol(ChocoPyTokens.DEDENT);
+            }
+            atStartOfLine = false;
+            yybegin(YYINITIAL);
+        }
+    }
+
+
+    // Verifica indentação no início da linha
+    ^{WhiteSpace}+     {
+                          if (atStartOfLine) {
+            currentIndent = yytext().replace("\t", "    ").length();
+            int top = indentStack.peek();
+            if (currentIndent > top) {
+                indentStack.push(currentIndent);
+                yybegin(YYINITIAL);
+                return symbol(ChocoPyTokens.INDENT);
+            } else if (currentIndent < top) {
+                indentStack.pop();
+                yypushback(yylength());
+                yybegin(YYINITIAL);
+                return symbol(ChocoPyTokens.DEDENT);
+            }
+            atStartOfLine = false;
+            yybegin(YYINITIAL);
+        }
+                       }    
+
 }
 
 <<EOF>>                       { 
