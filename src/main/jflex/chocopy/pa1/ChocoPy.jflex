@@ -57,7 +57,7 @@ import java.util.Stack;
 %}
 
 %xstate IDENTATION
-%xstate RESTO
+%xstate BODY
 
 
 /* Macros (regexes used in rules below) */
@@ -85,7 +85,7 @@ Comment = \#.*
         else{
           //  System.out.println(atStartOfLine);
             yypushback(yylength());
-            yybegin(RESTO);
+            yybegin(BODY);
         }
     }
 
@@ -106,7 +106,7 @@ Comment = \#.*
 }
 
 
-<RESTO>{
+<BODY>{
 
     /* Delimiters. */
   {LineBreak}                 { atStartOfLine = true; yybegin(YYINITIAL); return symbol(ChocoPyTokens.NEWLINE); }

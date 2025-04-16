@@ -59,7 +59,7 @@ Agradecimentos:
 Horas necessárias:
 
 Perguntas:
-    1 - 
+    1 - A estrategia usada para emitir os tokens indent e dedent foi criar um estado "INDENTATION" e um estado "RESTO" (linhas 59-60 no arquivo jflex). O estado "RESTO" serve para gerar todos os tokens basicos do lexer. O estado "INDENTATION" faz a indentação em si. Ele funciona através de uma pilha criada antes que guarda a identação atual do programa. Ao entrar em "INDENTATION" o scanner checa se esta vendo um espaço em branco ou não. Caso seja um espaço em branco  
     2 -
     3 -  
 
