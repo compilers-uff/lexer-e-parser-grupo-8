@@ -147,7 +147,7 @@ terminal String EQ, NEQ, LT, GT, LEQ, GEQ;
 terminal String LPAREN, RPAREN, LBRACE, RBRACE, LBRACKET, RBRACKET;
 terminal String COMMA, COLON, DOT, ARROW;
 terminal String IF, ELIF, ELSE, WHILE, FOR; 
-terminal String DEF, RETURN, CLASS, PRINT;
+terminal String DEF, RETURN, CLASS;
 terminal String NONE, TRUE, FALSE, PASS, IS, IN; 
 terminal String NOT, AND, OR;
 terminal String STRING;
@@ -387,6 +387,6 @@ binary_expr ::= expr:e1 PLUS:op expr:e2      {: RESULT = new BinaryExpr(e1xleft,
               | expr:e1 GEQ:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
               | expr:e1 LEQ:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
               | expr:e1 IS:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
-              | expr:e1 OR:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, "or", e2); :}
-              | expr:e1 AND:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, "and", e2); :}
+              | expr:e1 OR:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+              | expr:e1 AND:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
               ;
