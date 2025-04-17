@@ -193,8 +193,8 @@ non terminal List<Expr>         expr_list, target_aux;
 precedence right IF, ELSE;
 precedence left OR;
 precedence left AND;
-precedence right NOT;
-precedence left EQ, NEQ, LT, LEQ, GT, GEQ, IS;
+precedence left NOT;
+precedence nonassoc EQ, NEQ, LT, LEQ, GT, GEQ, IS;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIVIDE, MOD;
 precedence right UNARYMINUS;
@@ -229,7 +229,7 @@ class_definition ::= CLASS:cl id:identifier LPAREN id:identifier_root RPAREN COL
         {: RESULT = new ClassDef(clxleft, getLeft(cb), identifier, identifier_root, cb); :}
         ;
 
-class_body ::= PASS:pass                                         {: RESULT = empty(); :}
+class_body ::= PASS:pass NEWLINE                                 {: RESULT = empty(); :}
              | class_body:class_b error:error                    {: RESULT = class_b; :}
              | var_definition:var_d                              {: RESULT = single(var_d); :}
              | function_definition:func_d                        {: RESULT = single(func_d); :}
@@ -284,7 +284,7 @@ nonlocal_definition ::= NONLOCAL:nonlocal id:identifier NEWLINE     {: RESULT = 
 
 
 /* Definição de variável */
-var_definition ::= typed_variable: ty_var EQ literal:literal NEWLINE     {: RESULT = new VarDef(ty_varxleft, literalxright, ty_var, literal); :};
+var_definition ::= typed_variable:ty_var ASSIGN literal:literal NEWLINE     {: RESULT = new VarDef(ty_varxleft, literalxright, ty_var, literal); :};
 
 
 /* Definição de statements */
