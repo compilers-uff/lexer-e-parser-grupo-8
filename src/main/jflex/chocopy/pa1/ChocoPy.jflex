@@ -56,8 +56,8 @@ import java.util.Stack;
 
 %}
 
-%xstate IDENTATION
-%xstate BODY
+%state IDENTATION
+%state BODY
 
 
 /* Macros (regexes used in rules below) */
@@ -179,14 +179,13 @@ Comment = \#.*
             
             if (currentIndent > top) {
                 indentStack.push(currentIndent);
-                atStartOfLine = false;
-                yybegin(YYINITIAL);
+                yypushback(yylength());
+                yybegin(IDENTATION);
                 return symbol(ChocoPyTokens.INDENT);
             } else if (currentIndent < top) {
                 indentStack.pop();
                 yypushback(yylength());
-                atStartOfLine = false;
-                yybegin(YYINITIAL);
+                yybegin(IDENTATION);
                 return symbol(ChocoPyTokens.DEDENT);
             } else {
                 atStartOfLine = false;
@@ -201,8 +200,7 @@ Comment = \#.*
             if (top > 0) {
                 indentStack.pop();
                 yypushback(yylength());
-                atStartOfLine = false;
-                yybegin(YYINITIAL);
+                yybegin(IDENTATION);
                 return symbol(ChocoPyTokens.DEDENT);
             } else {
                 yypushback(yylength());

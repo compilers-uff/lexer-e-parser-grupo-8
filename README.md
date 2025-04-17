@@ -59,8 +59,13 @@ Agradecimentos:
 Horas necessárias:
 
 Perguntas:
-    1 - A estrategia usada para emitir os tokens indent e dedent foi criar um estado "INDENTATION" e um estado "RESTO" (linhas 59-60 no arquivo jflex). O estado "RESTO" serve para gerar todos os tokens basicos do lexer. O estado "INDENTATION" faz a indentação em si. Ele funciona através de uma pilha criada antes que guarda a identação atual do programa. Ao entrar em "INDENTATION" o scanner checa se esta vendo um espaço em branco ou não. Caso seja um espaço em branco  
-    2 -
+    1 - A estratégia utilizada para emitir os tokens INDENT e DEDENT foi baseada em uma pilha de indentação e na divisão do lexer em dois estados principais: IDENTATION, responsável pelo tratamento de espaços e tabs no início da linha, e BODY, que processa os demais tokens da linguagem.
+
+    Inicialmente, foi declarada uma pilha (indentStack) para armazenar os níveis de indentação encontrados (linha 32). Essa pilha começa com o valor zero e, sempre que uma nova linha é analisada, o lexer entra no estado IDENTATION (linhas 116-152). Nesse estado, caso sejam detectados espaços ou tabs no início da linha, o nível atual de indentação é calculado e comparado com o topo da pilha. Se o nível for maior, o valor é empilhado e um token INDENT é emitido; se for menor, o valor é desempilhado e um token DEDENT é gerado. Caso o nível seja igual, nenhum token é emitido, e o processamento continua normalmente.
+
+    Para garantir que o restante da linha seja processado corretamente, é utilizado yypushback para retornar o texto ao buffer, seguido pela transição para o estado YYINITIAL, com a variável atStartOfLine sendo atualizada para false. Além disso, ao final do arquivo (linhas 154-161), são emitidos tokens DEDENT para fechar quaisquer blocos que ainda estejam abertos.
+
+    2 - 
     3 -  
 
 (Students should edit this section with their write-up)
