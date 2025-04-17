@@ -117,7 +117,6 @@ StringChar = [^\"]
     /* Literals. */
   {IntegerLiteral}            { return symbol(ChocoPyTokens.NUMBER, Integer.parseInt(yytext())); }
   
-  "\""                        { currentString = ""; currentStringLine = yyline + 1; currentStringColumn = yycolumn + 1; yybegin(STRING); }
 
   /* Operators. */
   "+"                         { return symbol(ChocoPyTokens.PLUS); }
@@ -134,6 +133,7 @@ StringChar = [^\"]
   "<="                        { return symbol(ChocoPyTokens.LEQ); }
 
   /* Delimiters. */
+  "\""                        { currentString = ""; currentStringLine = yyline + 1; currentStringColumn = yycolumn + 1; yybegin(STRING); }
   "("                         { return symbol(ChocoPyTokens.LPAREN); }
   ")"                         { return symbol(ChocoPyTokens.RPAREN); }
   "{"                         { return symbol(ChocoPyTokens.LBRACE); }

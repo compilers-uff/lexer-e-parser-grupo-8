@@ -168,7 +168,7 @@ non terminal Program            program;
 non terminal List<Declaration>  program_head;
 non terminal List<Stmt>         stmt_list, opt_stmt_list;
 non terminal Stmt               stmt;
-non terminal Expr               expr, binary_expr;
+non terminal Expr               expr, binary_expr, comparison_expr;
 non terminal Identifier         id;
 non terminal ClassDef           class_definition;
 non terminal FuncDef            function_definition;
@@ -190,7 +190,6 @@ non terminal List<Expr>         expr_list, target_aux;
 
 /* Precedences (lowest to highest) for resolving what would otherwise be
  * ambiguities in the form of shift/reduce conflicts.. */
-precedence right IF, ELSE;
 precedence left OR;
 precedence left AND;
 precedence left NOT;
@@ -199,6 +198,7 @@ precedence left PLUS, MINUS;
 precedence left TIMES, DIVIDE, MOD;
 precedence right UNARYMINUS;
 precedence left DOT, COMMA, LBRACKET, RBRACKET;
+precedence right IF, ELSE;
 
 /* The start symbol. */
 start with program;
@@ -339,22 +339,23 @@ literal ::= NONE:n              {: RESULT = new NoneLiteral(nxleft, nxright); :}
           ;
 
 /* Definição de expressões */
-expr ::= cexpr:cexpr                                   {: RESULT = cexpr; :}
-       | binary_expr:be                                {: RESULT = be; :}
-       | expr:expr_1 IF expr:expr_2 ELSE expr:expr_3   {: RESULT = new IfExpr(expr_1xleft, expr_3xright, expr_1, expr_2, expr_3); :}
+expr ::= cexpr:ce                                                         {: RESULT = ce; :}
+       | NOT:n expr:expr                                                  {: RESULT = new UnaryExpr(nxleft, exprxright, n, expr); :}
+       | comparison_expr:comp_expr                                        {: RESULT = comp_expr; :}
+       | expr:e1 IF expr:e2 ELSE expr:e3                                  {: RESULT = new IfExpr(e1xleft, e3xright, e2, e1, e3); :}
        ;
 
-cexpr ::= id:identifier                                           {: RESULT = identifier; :}
-       | literal:literal                                          {: RESULT = literal; :}
-       | LBRACKET:lb expr_list:ex_l RBRACKET:rb                   {: RESULT = new ListExpr(lbxleft, rbxright, ex_l); :}
-       | LPAREN expr:expr RPAREN                                  {: RESULT = expr; :}
-       | member_expr:member_e                                     {: RESULT = member_e; :}
-       | index_expr:index_e                                       {: RESULT = index_e; :}
-       | member_expr:member_e LPAREN expr_list:ex_l RPAREN:rp     {: RESULT = new MethodCallExpr(member_exleft, rpxright, member_e, ex_l); :}
-       | id:identifier LPAREN expr_list:expr_l RPAREN:rp          {: RESULT = new CallExpr(identifierxleft, rpxright, identifier, expr_l); :}
-       | NOT expr:expr                                            {: RESULT = new UnaryExpr(exprxleft, exprxright, "not", expr); :}
-       | MINUS:op expr:expr                                       {: RESULT = new UnaryExpr(opxleft, exprxright, op, expr); :} %prec UNARYMINUS
-       ;
+cexpr ::= id:identifier                                                    {: RESULT = identifier; :}
+        | literal:literal                                                  {: RESULT = literal; :}
+        | LBRACKET:lb expr_list:e_list RBRACKET:rb                         {: RESULT = new ListExpr(lbxleft, rbxright, e_list); :}
+        | LPAREN:lparen expr:expr RPAREN:rparen                            {: RESULT = expr; :}
+        | member_expr:member_e                                             {: RESULT = member_e; :}
+        | index_expr:index_e                                               {: RESULT = index_e; :}
+        | member_expr:member_e LPAREN expr_list:e_list RPAREN:rparen       {: RESULT = new MethodCallExpr(member_exleft, rparenxright, member_e, e_list); :}
+        | id:identifier LPAREN expr_list:e_list RPAREN:rparen              {: RESULT = new CallExpr(identifierxleft, rparenxright, identifier, e_list); :}
+        | binary_expr:b_expr                                               {: RESULT = b_expr; :}
+        | MINUS:op expr:expr                                               {: RESULT = new UnaryExpr(opxleft, exprxright, op, expr); :} %prec UNARYMINUS
+        ;
 
 member_expr ::= cexpr:cexpr DOT id:identifier   {: RESULT = new MemberExpr(cexprxleft, identifierxright, cexpr, identifier); :};
 
@@ -374,7 +375,7 @@ expr_list ::=                                       {: RESULT = empty(); :}
             ;
 
 
-/* Definições de expressões binárias */
+/* Definições de expressões binárias com operadores e com comparadores */
 binary_expr ::= expr:e1 PLUS:op expr:e2      {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
               | expr:e1 MINUS:op expr:e2     {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
               | expr:e1 TIMES:op expr:e2     {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
@@ -386,7 +387,9 @@ binary_expr ::= expr:e1 PLUS:op expr:e2      {: RESULT = new BinaryExpr(e1xleft,
               | expr:e1 GT:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
               | expr:e1 GEQ:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
               | expr:e1 LEQ:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
-              | expr:e1 IS:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
-              | expr:e1 OR:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
-              | expr:e1 AND:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
               ;
+
+comparison_expr ::= expr:e1 AND:op expr:e2      {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+                  | expr:e1 OR:op expr:e2       {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+                  | expr:e1 IS:op expr:e2        {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, op, e2); :}
+                  ;
