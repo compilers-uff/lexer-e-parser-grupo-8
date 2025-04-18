@@ -54,7 +54,7 @@ Team member 2: João Guilherme Coutinho Beltrão
 
 Team member 3: João Pedro Mateus Souza
 
-Agradecimentos: Dario Chen Chen Ye
+Agradecimentos: Dario Chen Chen Ye, Lucca Sabbatini
 
 Horas necessárias: 40h
 
