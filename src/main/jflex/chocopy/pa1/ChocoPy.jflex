@@ -164,7 +164,7 @@ StringChar = [^\"]
   "global"                    { return symbol(ChocoPyTokens.GLOBAL); }
   "nonlocal"                  { return symbol(ChocoPyTokens.NONLOCAL); }
   "not"                       { return symbol(ChocoPyTokens.NOT); }
-  "or"                       { return symbol(ChocoPyTokens.OR); }
+  "or"                        { return symbol(ChocoPyTokens.OR); }
   "and"                       { return symbol(ChocoPyTokens.AND); }
 
   /* Identifiers. */

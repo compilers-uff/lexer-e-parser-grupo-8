@@ -54,9 +54,9 @@ Team member 2: João Guilherme Coutinho Beltrão
 
 Team member 3: João Pedro Mateus Souza
 
-Agradecimentos: 
+Agradecimentos: Dario Chen Chen Ye
 
-Horas necessárias:
+Horas necessárias: 40h
 
 Perguntas:
     1 - A estratégia adotada para emissão dos tokens INDENT e DEDENT baseou-se no gerenciamento de estados e no uso de uma estrutura de pilha para controle dos níveis de indentação. O arquivo jflex implementa essa lógica através de dois estados principais: um dedicado à análise da indentação no início das linhas e outro para o processamento do resto do conteudo.
@@ -71,6 +71,7 @@ Perguntas:
 
     No código, essa lógica é aplicada no estado IDENTATION, onde a indentação é verificada no início de cada linha. A pilha começa com zero, e variáveis auxiliares controlam o estado do lexer, garantindo que os blocos sejam abertos e fechados conforme a especificação.
 
-    3 -
+    3 - A parte mais complicada foi pensar na implementação de Strings, já que teríamos que pensar em formas de considerar o tratamento correto de todos os casos especiais que podem aparecer em literais string (aspas internas, por exemplo).
+    Criamos uma Macro (StringChar) e um estado novo chamado <STRING> (l:181 ChocoPy.jflex) onde resolvem os problemas.
 
 (Students should edit this section with their write-up)

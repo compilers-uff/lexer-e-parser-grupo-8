@@ -148,7 +148,7 @@ terminal String LPAREN, RPAREN, LBRACE, RBRACE, LBRACKET, RBRACKET;
 terminal String COMMA, COLON, DOT, ARROW;
 terminal String IF, ELIF, ELSE, WHILE, FOR; 
 terminal String DEF, RETURN, CLASS;
-terminal String NONE, TRUE, FALSE, PASS, IS, IN; 
+terminal String NONE, TRUE, FALSE, PASS, IS, IN, INT; 
 terminal String NOT, AND, OR;
 terminal String STRING;
 terminal String GLOBAL, NONLOCAL;
@@ -264,7 +264,7 @@ list_tp ::=                                             {: RESULT = empty(); :}
 
 
 /* Variável tipada*/
-typed_variable ::= id:identifier COLON type:t   {: RESULT = new TypedVar(identifierxleft, identifierxright, identifier, t); :};
+typed_variable ::= id:identifier COLON type:t           {:RESULT = new TypedVar(identifierxleft, txright, identifier, t); :};
 
 
 /* Tipos */
@@ -273,7 +273,8 @@ type ::= id:identifier                                  {: RESULT = new ClassTyp
        | TRUE:t                                         {: RESULT = new ClassType(txleft, txright, t); :}
        | FALSE:f                                        {: RESULT = new ClassType(fxleft, fxright, f); :}
        | STRING:s                                       {: RESULT = new ClassType(sxleft, sxright, s); :}
-       | LBRACKET LBRACKET type:t RBRACKET RBRACKET     {: RESULT = new ListType(txleft, txright, t); :}
+       | LBRACKET type:t RBRACKET                       {: RESULT = new ListType(txleft, txright, t); :}
+
        ;
 
 
