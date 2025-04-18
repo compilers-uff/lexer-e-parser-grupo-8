@@ -48,8 +48,30 @@ To sync with updates upstream:
 
 ## Submission writeup
 
-Team member 1: 
+Team member 1: Isadora Crescencio Verbicário Botelho
 
-Team member 2: 
+Team member 2: João Guilherme Coutinho Beltrão
+
+Team member 3: João Pedro Mateus Souza
+
+Agradecimentos: Dario Chen Chen Ye
+
+Horas necessárias: 40h
+
+Perguntas:
+    1 - A estratégia adotada para emissão dos tokens INDENT e DEDENT baseou-se no gerenciamento de estados e no uso de uma estrutura de pilha para controle dos níveis de indentação. O arquivo jflex implementa essa lógica através de dois estados principais: um dedicado à análise da indentação no início das linhas e outro para o processamento do resto do conteudo.
+
+    Inicialmente, uma pilha é utilizada para armazenar os níveis de indentação, começando com o valor 0. Durante a análise, sempre que é identificado um novo nível de indentação no começo de uma linha, ele é comparado com o valor armazenado no topo da pilha. Caso o nível atual seja superior, o novo valor é empilhado e um token INDENT é gerado (linhas 180-184). Quando o nível é inferior, os valores são desempilhados e tokens DEDENT são emitidos até que seja alcançada a correspondência com o nível atual (linhas 185-189).
+
+    Caso a linha não comece com eespaço em branco, o scanne verifica se ouve um dedent e faz um yypushback para voltar o buffer e processar corretamente o resto da linha.
+
+    O programa também inclui tratamento especial para o final do arquivo, garantindo que todos os níveis de indentação abertos sejam devidamente fechados através da emissão dos tokens DEDENT correspondentes antes da geração do token EOF (linhas 215-223).
+
+    2 - A implementação da indentação no analisador léxico do ChocoPy segue as regras da Seção 3.1.5 do manual, utilizando uma pilha para controlar os níveis de indentação e emitir os tokens INDENT e DEDENT corretamente. O manual especifica que os espaços iniciais de uma linha definem seu nível de indentação, que deve ser comparado com o topo da pilha. Se for maior, um novo nível é empilhado e um token INDENT é gerado; se for menor, a pilha é desempilhada até encontrar um nível igual, emitindo DEDENT para cada remoção. Ao final do arquivo, todos os níveis restantes são fechados com DEDENT.
+
+    No código, essa lógica é aplicada no estado IDENTATION, onde a indentação é verificada no início de cada linha. A pilha começa com zero, e variáveis auxiliares controlam o estado do lexer, garantindo que os blocos sejam abertos e fechados conforme a especificação.
+
+    3 - A parte mais complicada foi pensar na implementação de Strings, já que teríamos que pensar em formas de considerar o tratamento correto de todos os casos especiais que podem aparecer em literais string (aspas internas, por exemplo).
+    Criamos uma Macro (StringChar) e um estado novo chamado <STRING> (l:181 ChocoPy.jflex) onde resolvem os problemas.
 
 (Students should edit this section with their write-up)
